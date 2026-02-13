@@ -1,7 +1,6 @@
 """Tests for the WebSocket server module."""
 
 import asyncio
-import json
 
 import pytest
 import pytest_asyncio
@@ -11,7 +10,6 @@ from nochan.opencode import OpenCodeResponse, SubprocessOpenCodeBackend
 from nochan.server import NochanServer
 from nochan.session import SessionManager
 from tests.mock_napcat import MockNapCat
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -50,9 +48,7 @@ async def server_and_mock(tmp_path):
 
     # Start server in background; we need to find the actual port
     # Use websockets.serve directly to get the server object
-    ws_server = await websockets.serve(
-        server._handler_ws, "127.0.0.1", 0
-    )
+    ws_server = await websockets.serve(server._handler_ws, "127.0.0.1", 0)
     # Extract the port from the server socket
     port = ws_server.sockets[0].getsockname()[1]
     server._bot_id = None  # will be set by lifecycle event

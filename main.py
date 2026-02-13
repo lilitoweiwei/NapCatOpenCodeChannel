@@ -6,9 +6,9 @@ from pathlib import Path
 
 from nochan.config import get_config_path, load_config
 from nochan.log import setup_logging
+from nochan.opencode import SubprocessOpenCodeBackend
 from nochan.server import NochanServer
 from nochan.session import SessionManager
-from nochan.opencode import SubprocessOpenCodeBackend
 
 logger = logging.getLogger("nochan.main")
 
@@ -62,7 +62,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
+    import contextlib
+
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass

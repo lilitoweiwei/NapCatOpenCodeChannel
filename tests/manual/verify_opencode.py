@@ -20,7 +20,6 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 
-
 # Path to opencode executable (change if not in PATH)
 OPENCODE_CMD = "opencode"
 
@@ -37,6 +36,7 @@ def timestamp() -> str:
 @dataclass
 class RunResult:
     """Parsed result from an opencode run."""
+
     session_id: str | None = None
     text_parts: list[str] = field(default_factory=list)
     tool_calls: list[dict] = field(default_factory=list)
@@ -48,9 +48,7 @@ class RunResult:
     raw_events: list[dict] = field(default_factory=list)
 
 
-async def run_opencode(
-    prompt: str, session_id: str | None = None
-) -> RunResult:
+async def run_opencode(prompt: str, session_id: str | None = None) -> RunResult:
     """
     Run opencode CLI with --format json and parse the JSONL output.
 
@@ -133,9 +131,12 @@ async def run_opencode(
             tokens = part.get("tokens")
             print(f"  [line {line_num}] STEP_FINISH: reason={reason}, cost={cost}")
             if tokens:
-                print(f"               tokens: in={tokens.get('input')}, out={tokens.get('output')}, "
-                      f"reasoning={tokens.get('reasoning')}, "
-                      f"cache_read={tokens.get('cache', {}).get('read')}")
+                print(
+                    f"               tokens: in={tokens.get('input')},"
+                    f" out={tokens.get('output')},"
+                    f" reasoning={tokens.get('reasoning')},"
+                    f" cache_read={tokens.get('cache', {}).get('read')}"
+                )
             # Only mark finished on final stop
             if reason == "stop":
                 result.finished = True
@@ -150,7 +151,8 @@ async def run_opencode(
             print(f"  [line {line_num}] ERROR: {error_msg}")
 
         else:
-            print(f"  [line {line_num}] UNKNOWN ({event_type}): {json.dumps(event, ensure_ascii=False)[:200]}")
+            unknown_json = json.dumps(event, ensure_ascii=False)[:200]
+            print(f"  [line {line_num}] UNKNOWN ({event_type}): {unknown_json}")
 
     # Read stderr
     assert process.stderr is not None
@@ -190,7 +192,7 @@ async def main() -> None:
 
     # --- Test 1: First prompt (new session) ---
     print(f"\n{'#' * 60}")
-    print(f"  TEST 1: New session - first prompt")
+    print("  TEST 1: New session - first prompt")
     print(f"{'#' * 60}")
 
     result1 = await run_opencode(FIRST_PROMPT)
@@ -205,7 +207,7 @@ async def main() -> None:
 
     # --- Test 2: Follow-up prompt (continue session) ---
     print(f"\n{'#' * 60}")
-    print(f"  TEST 2: Continue session - follow-up prompt")
+    print("  TEST 2: Continue session - follow-up prompt")
     print(f"  Using session ID: {result1.session_id}")
     print(f"{'#' * 60}")
 
@@ -214,7 +216,7 @@ async def main() -> None:
 
     # --- Final verdict ---
     print(f"\n{'#' * 60}")
-    print(f"  VERIFICATION RESULTS")
+    print("  VERIFICATION RESULTS")
     print(f"{'#' * 60}")
 
     checks = [

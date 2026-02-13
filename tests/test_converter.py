@@ -1,18 +1,17 @@
 """Tests for the message converter module."""
 
 from nochan.converter import (
-    HELP_TEXT,
     build_prompt,
     parse_command,
     parse_message_event,
     to_onebot_message,
 )
 
-
 BOT_ID = 1234567890
 
 
 # --- parse_message_event tests ---
+
 
 def test_parse_private_text_message() -> None:
     """Test parsing a simple private text message."""
@@ -148,6 +147,7 @@ def test_sender_name_fallback_to_nickname() -> None:
 
 # --- build_prompt tests ---
 
+
 def test_build_prompt_private() -> None:
     """Test prompt building for private messages."""
     event = {
@@ -188,6 +188,7 @@ def test_build_prompt_group() -> None:
 
 # --- parse_command tests ---
 
+
 def test_parse_command_new() -> None:
     assert parse_command("/new") == "new"
     assert parse_command("/NEW") == "new"
@@ -210,6 +211,7 @@ def test_parse_command_not_command() -> None:
 
 
 # --- to_onebot_message tests ---
+
 
 def test_to_onebot_message() -> None:
     result = to_onebot_message("Hello world")

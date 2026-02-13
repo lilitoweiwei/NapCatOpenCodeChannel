@@ -8,7 +8,6 @@ from nochan.opencode import OpenCodeResponse, SubprocessOpenCodeBackend
 from nochan.session import SessionManager
 from tests.mock_napcat import MockNapCat
 
-
 pytestmark = pytest.mark.asyncio
 
 BOT_ID = MockNapCat.BOT_ID
@@ -78,8 +77,11 @@ def _private_event(user_id: int, name: str, text: str) -> dict:
 
 
 def _group_event(
-    group_id: int, group_name: str,
-    user_id: int, name: str, text: str,
+    group_id: int,
+    group_name: str,
+    user_id: int,
+    name: str,
+    text: str,
     at_bot: bool = False,
 ) -> dict:
     """Build a minimal group message event."""
@@ -114,9 +116,7 @@ async def test_group_without_at_ignored(handler_env) -> None:
     """Test that group messages without @bot produce no reply."""
     handler, backend, replies, _ = handler_env
 
-    await handler.handle_message(
-        _group_event(222, "G", 111, "Bob", "hi", at_bot=False), BOT_ID
-    )
+    await handler.handle_message(_group_event(222, "G", 111, "Bob", "hi", at_bot=False), BOT_ID)
 
     assert len(backend.calls) == 0
     assert len(replies.replies) == 0
@@ -126,9 +126,7 @@ async def test_group_with_at_processed(handler_env) -> None:
     """Test that group messages with @bot are processed."""
     handler, backend, replies, _ = handler_env
 
-    await handler.handle_message(
-        _group_event(222, "G", 111, "Bob", " hi", at_bot=True), BOT_ID
-    )
+    await handler.handle_message(_group_event(222, "G", 111, "Bob", " hi", at_bot=True), BOT_ID)
 
     assert len(backend.calls) == 1
     assert replies.last_text == "Handler test reply"

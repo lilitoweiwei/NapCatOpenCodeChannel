@@ -11,7 +11,6 @@ from nochan.server import NochanServer
 from nochan.session import SessionManager
 from tests.mock_napcat import MockNapCat
 
-
 pytestmark = pytest.mark.asyncio
 
 
@@ -91,9 +90,7 @@ async def test_full_group_conversation(full_stack) -> None:
     """Test a full group chat flow with @bot."""
     server, mock, fake_backend, sm = full_stack
 
-    await mock.send_group_message(
-        222, "开发群", 333, "Bob", " 帮我写个函数", at_bot=True
-    )
+    await mock.send_group_message(222, "开发群", 333, "Bob", " 帮我写个函数", at_bot=True)
     api_call = await mock.recv_api_call(timeout=5.0)
 
     assert api_call is not None

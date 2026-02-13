@@ -66,7 +66,10 @@ def parse_jsonl_events(lines: list[str]) -> OpenCodeResponse:
             status = state.get("status", "?")
             output = state.get("output", "")
             logger.info(
-                "OpenCode tool: %s [%s] %s", tool_name, status, title,
+                "OpenCode tool: %s [%s] %s",
+                tool_name,
+                status,
+                title,
             )
             if output:
                 logger.debug("OpenCode tool output: %s", output[:500])
@@ -108,7 +111,9 @@ def parse_jsonl_events(lines: list[str]) -> OpenCodeResponse:
     if errors:
         logger.info(
             "OpenCode parse result: FAILED session=%s content_len=%d errors=%s",
-            session_id, len(content), "; ".join(errors),
+            session_id,
+            len(content),
+            "; ".join(errors),
         )
         return OpenCodeResponse(
             session_id=session_id,
@@ -119,7 +124,8 @@ def parse_jsonl_events(lines: list[str]) -> OpenCodeResponse:
 
     logger.info(
         "OpenCode parse result: OK session=%s content_len=%d",
-        session_id, len(content),
+        session_id,
+        len(content),
     )
 
     return OpenCodeResponse(
@@ -133,9 +139,7 @@ def parse_jsonl_events(lines: list[str]) -> OpenCodeResponse:
 class SubprocessOpenCodeBackend:
     """OpenCode backend that runs `opencode run` as a subprocess."""
 
-    def __init__(
-        self, command: str, work_dir: str, max_concurrent: int
-    ) -> None:
+    def __init__(self, command: str, work_dir: str, max_concurrent: int) -> None:
         # Path or name of the opencode executable
         self._command = command
         # Working directory passed as cwd to the subprocess
@@ -150,9 +154,7 @@ class SubprocessOpenCodeBackend:
         """Check if all slots are occupied (new requests will have to wait)."""
         return self._active_count >= self._max_concurrent
 
-    async def send_message(
-        self, session_id: str | None, message: str
-    ) -> OpenCodeResponse:
+    async def send_message(self, session_id: str | None, message: str) -> OpenCodeResponse:
         """
         Send a message to OpenCode via CLI subprocess.
 
@@ -167,9 +169,7 @@ class SubprocessOpenCodeBackend:
         finally:
             self._active_count -= 1
 
-    async def _run(
-        self, session_id: str | None, message: str
-    ) -> OpenCodeResponse:
+    async def _run(self, session_id: str | None, message: str) -> OpenCodeResponse:
         """Execute opencode run and parse the JSONL output."""
         # Build command
         cmd = [self._command, "run", "--format", "json"]
@@ -205,9 +205,7 @@ class SubprocessOpenCodeBackend:
 
             # Check exit code
             if process.returncode != 0:
-                logger.error(
-                    "OpenCode exited with code %d", process.returncode
-                )
+                logger.error("OpenCode exited with code %d", process.returncode)
                 return OpenCodeResponse(
                     session_id=session_id or "",
                     content="",

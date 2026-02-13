@@ -1,10 +1,8 @@
 """Tests for the session management module."""
 
 import pytest
-import pytest_asyncio
 
 from nochan.session import SessionManager
-
 
 pytestmark = pytest.mark.asyncio
 
@@ -80,7 +78,7 @@ async def test_only_one_active_per_chat(session_manager: SessionManager) -> None
     """Test that creating a second session without archiving gives two active (edge case)."""
     # Note: The application logic should archive before creating new,
     # but the database layer itself doesn't enforce uniqueness on active status.
-    s1 = await session_manager.create_session("group:200")
+    await session_manager.create_session("group:200")
     s2 = await session_manager.create_session("group:200")
 
     # get_active_session returns the most recent one

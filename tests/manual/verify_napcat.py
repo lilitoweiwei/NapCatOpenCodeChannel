@@ -85,7 +85,7 @@ async def send_api(action: str, params: dict | None = None) -> dict | None:
         response = await asyncio.wait_for(future, timeout=10.0)
         print_event(f"API Response ({action})", response)
         return response
-    except asyncio.TimeoutError:
+    except TimeoutError:
         print(f"[{timestamp()}] API call {action} timed out (10s)")
         pending_responses.pop(echo, None)
         return None
@@ -139,9 +139,7 @@ async def handle_connection(websocket: ServerConnection) -> None:
                 user_id = data.get("user_id", "?")
 
                 if msg_type == "private":
-                    print_event(
-                        f"PRIVATE MESSAGE from {nickname}({user_id})", data
-                    )
+                    print_event(f"PRIVATE MESSAGE from {nickname}({user_id})", data)
                 elif msg_type == "group":
                     group_id = data.get("group_id", "?")
                     print_event(
@@ -210,10 +208,13 @@ async def interactive_console() -> None:
             try:
                 user_id = int(parts[1])
                 text = parts[2]
-                await send_api("send_private_msg", {
-                    "user_id": user_id,
-                    "message": [{"type": "text", "data": {"text": text}}],
-                })
+                await send_api(
+                    "send_private_msg",
+                    {
+                        "user_id": user_id,
+                        "message": [{"type": "text", "data": {"text": text}}],
+                    },
+                )
             except ValueError:
                 print("Usage: send <user_id> <text>")
 
@@ -221,10 +222,13 @@ async def interactive_console() -> None:
             try:
                 group_id = int(parts[1])
                 text = parts[2]
-                await send_api("send_group_msg", {
-                    "group_id": group_id,
-                    "message": [{"type": "text", "data": {"text": text}}],
-                })
+                await send_api(
+                    "send_group_msg",
+                    {
+                        "group_id": group_id,
+                        "message": [{"type": "text", "data": {"text": text}}],
+                    },
+                )
             except ValueError:
                 print("Usage: gsend <group_id> <text>")
 
@@ -246,7 +250,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
+    import contextlib
+
+    with contextlib.suppress(KeyboardInterrupt):
         asyncio.run(main())
-    except KeyboardInterrupt:
-        pass

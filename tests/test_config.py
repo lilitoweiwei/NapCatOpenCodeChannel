@@ -28,7 +28,7 @@ def test_load_missing_file() -> None:
 def test_load_partial_config(tmp_path: Path) -> None:
     """Test that missing sections fall back to defaults."""
     config_file = tmp_path / "partial.toml"
-    config_file.write_text('[server]\nport = 9999\n')
+    config_file.write_text("[server]\nport = 9999\n")
 
     config = load_config(config_file)
     # Specified value should be loaded

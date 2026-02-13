@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 
-
 # Help text template shown for /help and unknown commands
 HELP_TEXT = (
     "nochan 指令列表：\n"

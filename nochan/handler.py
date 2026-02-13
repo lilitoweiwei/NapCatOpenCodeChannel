@@ -1,5 +1,6 @@
 """Message processing pipeline — business logic for handling QQ messages."""
 
+import contextlib
 import logging
 from collections.abc import Awaitable, Callable
 
@@ -57,13 +58,17 @@ class MessageHandler:
             if parsed.message_type == "group" and not parsed.is_at_bot:
                 logger.debug(
                     "Ignored group message (no @bot): group=%s user=%s text=%s",
-                    parsed.chat_id, parsed.sender_name, parsed.text[:100],
+                    parsed.chat_id,
+                    parsed.sender_name,
+                    parsed.text[:100],
                 )
                 return
 
             logger.info(
                 "Processing message from %s (%s): %s",
-                parsed.sender_name, parsed.chat_id, parsed.text[:100],
+                parsed.sender_name,
+                parsed.chat_id,
+                parsed.text[:100],
             )
 
             # Step 3: Check for commands
@@ -100,7 +105,8 @@ class MessageHandler:
             if response.success and response.content:
                 logger.info(
                     "Sending AI reply to %s (%d chars)",
-                    parsed.chat_id, len(response.content),
+                    parsed.chat_id,
+                    len(response.content),
                 )
                 await self._reply_fn(event, response.content)
             elif response.success and not response.content:
@@ -108,20 +114,18 @@ class MessageHandler:
                 await self._reply_fn(event, "AI 未返回有效回复")
             else:
                 logger.error(
-                    "OpenCode failed for %s: %s", parsed.chat_id, response.error,
+                    "OpenCode failed for %s: %s",
+                    parsed.chat_id,
+                    response.error,
                 )
                 await self._reply_fn(event, "AI 处理出错，请稍后重试")
 
         except Exception as e:
             logger.error("Error handling message: %s", e, exc_info=True)
-            try:
+            with contextlib.suppress(Exception):
                 await self._reply_fn(event, "处理消息时发生内部错误")
-            except Exception:
-                pass
 
-    async def _handle_command(
-        self, command: str, parsed: ParsedMessage, event: dict
-    ) -> None:
+    async def _handle_command(self, command: str, parsed: ParsedMessage, event: dict) -> None:
         """Handle a user command (/new, /help, etc.)."""
         if command == "new":
             # Archive current session and create a new one

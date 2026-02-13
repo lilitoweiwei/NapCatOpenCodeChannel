@@ -3,7 +3,7 @@
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiosqlite
 
@@ -81,12 +81,13 @@ class SessionManager:
     async def create_session(self, chat_id: str) -> Session:
         """Create a new active session for the given chat_id."""
         assert self._db is not None
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         session_id = str(uuid.uuid4())
 
         await self._db.execute(
-            "INSERT INTO sessions (id, chat_id, opencode_session_id, status, created_at, updated_at) "
-            "VALUES (?, ?, NULL, 'active', ?, ?)",
+            "INSERT INTO sessions"
+            " (id, chat_id, opencode_session_id, status, created_at, updated_at)"
+            " VALUES (?, ?, NULL, 'active', ?, ?)",
             (session_id, chat_id, now, now),
         )
         await self._db.commit()
@@ -108,7 +109,7 @@ class SessionManager:
         Returns True if a session was archived, False if none was active.
         """
         assert self._db is not None
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         cursor = await self._db.execute(
             "UPDATE sessions SET status = 'archived', updated_at = ? "
@@ -121,22 +122,20 @@ class SessionManager:
             logger.info("Archived active session for %s", chat_id)
         return archived
 
-    async def update_opencode_session_id(
-        self, session_id: str, opencode_session_id: str
-    ) -> None:
+    async def update_opencode_session_id(self, session_id: str, opencode_session_id: str) -> None:
         """Fill in the OpenCode session ID after the first OpenCode call."""
         assert self._db is not None
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         await self._db.execute(
-            "UPDATE sessions SET opencode_session_id = ?, updated_at = ? "
-            "WHERE id = ?",
+            "UPDATE sessions SET opencode_session_id = ?, updated_at = ? WHERE id = ?",
             (opencode_session_id, now, session_id),
         )
         await self._db.commit()
         logger.debug(
             "Updated session %s with opencode_session_id %s",
-            session_id[:8], opencode_session_id,
+            session_id[:8],
+            opencode_session_id,
         )
 
     async def close(self) -> None:

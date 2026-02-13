@@ -23,13 +23,15 @@ class MockNapCat:
         """Connect to the nochan server and send lifecycle event."""
         self._ws = await websockets.connect(self._url)
         # Send lifecycle connect event (what real NapCatQQ does)
-        await self._send_event({
-            "time": int(time.time()),
-            "self_id": self.BOT_ID,
-            "post_type": "meta_event",
-            "meta_event_type": "lifecycle",
-            "sub_type": "connect",
-        })
+        await self._send_event(
+            {
+                "time": int(time.time()),
+                "self_id": self.BOT_ID,
+                "post_type": "meta_event",
+                "meta_event_type": "lifecycle",
+                "sub_type": "connect",
+            }
+        )
 
     async def close(self) -> None:
         """Close the WebSocket connection."""
@@ -47,28 +49,28 @@ class MockNapCat:
         self._message_id_counter += 1
         return self._message_id_counter
 
-    async def send_private_message(
-        self, user_id: int, nickname: str, text: str
-    ) -> None:
+    async def send_private_message(self, user_id: int, nickname: str, text: str) -> None:
         """Send a simulated private message event."""
-        await self._send_event({
-            "self_id": self.BOT_ID,
-            "user_id": user_id,
-            "time": int(time.time()),
-            "message_id": self._next_message_id(),
-            "message_type": "private",
-            "sub_type": "friend",
-            "sender": {
+        await self._send_event(
+            {
+                "self_id": self.BOT_ID,
                 "user_id": user_id,
-                "nickname": nickname,
-                "card": "",
-            },
-            "message": [{"type": "text", "data": {"text": text}}],
-            "message_format": "array",
-            "raw_message": text,
-            "font": 14,
-            "post_type": "message",
-        })
+                "time": int(time.time()),
+                "message_id": self._next_message_id(),
+                "message_type": "private",
+                "sub_type": "friend",
+                "sender": {
+                    "user_id": user_id,
+                    "nickname": nickname,
+                    "card": "",
+                },
+                "message": [{"type": "text", "data": {"text": text}}],
+                "message_format": "array",
+                "raw_message": text,
+                "font": 14,
+                "post_type": "message",
+            }
+        )
 
     async def send_group_message(
         self,
@@ -91,37 +93,41 @@ class MockNapCat:
         segments.append({"type": "text", "data": {"text": text}})
         raw_parts.append(text)
 
-        await self._send_event({
-            "self_id": self.BOT_ID,
-            "user_id": user_id,
-            "time": int(time.time()),
-            "message_id": self._next_message_id(),
-            "message_type": "group",
-            "sub_type": "normal",
-            "group_id": group_id,
-            "group_name": group_name,
-            "sender": {
+        await self._send_event(
+            {
+                "self_id": self.BOT_ID,
                 "user_id": user_id,
-                "nickname": nickname,
-                "card": "",
-                "role": "member",
-            },
-            "message": segments,
-            "message_format": "array",
-            "raw_message": "".join(raw_parts),
-            "font": 14,
-            "post_type": "message",
-        })
+                "time": int(time.time()),
+                "message_id": self._next_message_id(),
+                "message_type": "group",
+                "sub_type": "normal",
+                "group_id": group_id,
+                "group_name": group_name,
+                "sender": {
+                    "user_id": user_id,
+                    "nickname": nickname,
+                    "card": "",
+                    "role": "member",
+                },
+                "message": segments,
+                "message_format": "array",
+                "raw_message": "".join(raw_parts),
+                "font": 14,
+                "post_type": "message",
+            }
+        )
 
     async def send_heartbeat(self) -> None:
         """Send a simulated heartbeat event."""
-        await self._send_event({
-            "time": int(time.time()),
-            "self_id": self.BOT_ID,
-            "post_type": "meta_event",
-            "meta_event_type": "heartbeat",
-            "interval": 30000,
-        })
+        await self._send_event(
+            {
+                "time": int(time.time()),
+                "self_id": self.BOT_ID,
+                "post_type": "meta_event",
+                "meta_event_type": "heartbeat",
+                "interval": 30000,
+            }
+        )
 
     async def recv_api_call(self, timeout: float = 5.0) -> dict | None:
         """
@@ -149,7 +155,7 @@ class MockNapCat:
             self._received.append(data)
             return data
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return None
 
     def get_last_api_call(self) -> dict | None:

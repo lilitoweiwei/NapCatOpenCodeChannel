@@ -6,7 +6,7 @@ import logging
 import uuid
 
 import websockets
-from websockets.server import ServerConnection
+from websockets.asyncio.server import ServerConnection
 
 from nochan.converter import to_onebot_message
 from nochan.handler import MessageHandler
@@ -41,6 +41,8 @@ class NochanServer:
         self._bot_id: int | None = None
         # In-flight API calls awaiting response, keyed by echo ID
         self._pending: dict[str, asyncio.Future[dict]] = {}
+        # Background message-handling tasks (prevent GC from cancelling them)
+        self._tasks: set[asyncio.Task[None]] = set()
 
         # Message handler — business logic, decoupled from transport
         self._handler = MessageHandler(
@@ -51,9 +53,7 @@ class NochanServer:
 
     async def start(self) -> None:
         """Start the WebSocket server and run forever."""
-        logger.info(
-            "Starting nochan server on ws://%s:%d", self._host, self._port
-        )
+        logger.info("Starting nochan server on ws://%s:%d", self._host, self._port)
         # Use None for host to bind all interfaces (IPv4 + IPv6)
         host = None if self._host == "0.0.0.0" else self._host
         async with websockets.serve(self._handler_ws, host, self._port):
@@ -117,13 +117,15 @@ class NochanServer:
             raw_msg = event.get("raw_message", "")[:150]
             logger.debug(
                 "Raw message event: type=%s user=%s raw=%s",
-                msg_type, user_id, raw_msg,
+                msg_type,
+                user_id,
+                raw_msg,
             )
             # Delegate to message handler in a separate task
             if self._bot_id is not None:
-                asyncio.create_task(
-                    self._handler.handle_message(event, self._bot_id)
-                )
+                task = asyncio.create_task(self._handler.handle_message(event, self._bot_id))
+                self._tasks.add(task)
+                task.add_done_callback(self._tasks.discard)
             else:
                 logger.warning("Received message before bot_id was set, ignoring")
 
@@ -155,23 +157,27 @@ class NochanServer:
         logger.debug("Reply text (%d chars): %s", len(text), text[:300])
 
         if message_type == "private":
-            resp = await self.send_api("send_private_msg", {
-                "user_id": event["user_id"],
-                "message": segments,
-            })
+            resp = await self.send_api(
+                "send_private_msg",
+                {
+                    "user_id": event["user_id"],
+                    "message": segments,
+                },
+            )
             if resp and resp.get("retcode") != 0:
                 logger.warning("send_private_msg failed: %s", resp)
         elif message_type == "group":
-            resp = await self.send_api("send_group_msg", {
-                "group_id": event["group_id"],
-                "message": segments,
-            })
+            resp = await self.send_api(
+                "send_group_msg",
+                {
+                    "group_id": event["group_id"],
+                    "message": segments,
+                },
+            )
             if resp and resp.get("retcode") != 0:
                 logger.warning("send_group_msg failed: %s", resp)
 
-    async def send_api(
-        self, action: str, params: dict | None = None
-    ) -> dict | None:
+    async def send_api(self, action: str, params: dict | None = None) -> dict | None:
         """
         Send an OneBot 11 API request via WebSocket and wait for response.
 
@@ -200,10 +206,12 @@ class NochanServer:
             response = await asyncio.wait_for(future, timeout=10.0)
             logger.debug(
                 "API response: action=%s status=%s retcode=%s",
-                action, response.get("status"), response.get("retcode"),
+                action,
+                response.get("status"),
+                response.get("retcode"),
             )
             return response
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning("API call %s timed out", action)
             self._pending.pop(echo, None)
             return None
