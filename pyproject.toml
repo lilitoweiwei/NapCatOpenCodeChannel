@@ -13,8 +13,45 @@ dependencies = [
 asyncio_mode = "strict"
 testpaths = ["tests"]
 
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "RUF001", # Allow Chinese characters in strings (user-facing text)
+    "SIM108", # Prefer explicit if/else over ternary for readability
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "RUF059", # Unused unpacked variables (e.g. `server, mock, _`) are standard in test fixtures
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
 [dependency-groups]
 dev = [
     "pytest",
     "pytest-asyncio",
+    "ruff",
+    "mypy",
 ]
