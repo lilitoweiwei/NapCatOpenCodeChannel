@@ -8,13 +8,15 @@ A Python WebSocket server that bridges [NapCatQQ](https://github.com/NapNeko/Nap
 # Install dependencies (requires uv and Python 3.12+)
 uv sync
 
+# Create your config from the template
+cp config.example.toml config.toml
 # Edit config.toml as needed, then start the server
 uv run python main.py
 ```
 
 ## Configuration
 
-See `config.toml` for all options. Key settings:
+Copy `config.example.toml` to `config.toml` and customize. Key settings:
 
 - `server.port` — WebSocket port for NapCatQQ to connect to
 - `opencode.max_concurrent` — Max parallel AI processes (default 1)

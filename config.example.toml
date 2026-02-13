@@ -1,4 +1,4 @@
-# nochan configuration file
+# nochan configuration file — copy to config.toml and customize.
 # See docs/product-v1.md section 9 for full documentation of each option.
 
 [server]
@@ -14,11 +14,10 @@ command = "opencode"
 # Working directory for opencode subprocess. Tilde (~) is expanded at runtime.
 work_dir = "~/.nochan/workspace"
 # Maximum number of concurrent opencode processes.
-# Keep low on resource-constrained VPS (2-core 2GB → 1 is safest).
 max_concurrent = 1
 
 [database]
-# SQLite database file path. Parent directories are created automatically.
+# SQLite database file path. Parent directories are created automatically. (relative to project root)
 path = "data/nochan.db"
 
 [prompt]
