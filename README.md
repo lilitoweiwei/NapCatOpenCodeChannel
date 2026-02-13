@@ -29,9 +29,21 @@ See `config.toml` for all options. Key settings:
 
 In group chats, the bot must be @-mentioned to respond.
 
-## Testing
+## Development
+
+Run the following commands to ensure code quality (same as CI):
 
 ```bash
+# Lint
+uv run ruff check nochan/ tests/ main.py
+
+# Format
+uv run ruff format nochan/ tests/ main.py
+
+# Type check
+uv run mypy nochan/ main.py
+
+# Test
 uv run pytest tests/ -v
 ```
 
