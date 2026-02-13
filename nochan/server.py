@@ -8,7 +8,7 @@ import uuid
 import websockets
 from websockets.asyncio.server import ServerConnection
 
-from nochan.converter import to_onebot_message
+from nochan.converter import ai_to_onebot
 from nochan.handler import MessageHandler
 from nochan.opencode import SubprocessOpenCodeBackend
 from nochan.session import SessionManager
@@ -151,7 +151,7 @@ class NochanServer:
     async def _reply_text(self, event: dict, text: str) -> None:
         """Send a text reply back to the source of the message event."""
         message_type = event.get("message_type", "")
-        segments = to_onebot_message(text)
+        segments = ai_to_onebot(text)
 
         # Log the reply text at DEBUG (may be long)
         logger.debug("Reply text (%d chars): %s", len(text), text[:300])

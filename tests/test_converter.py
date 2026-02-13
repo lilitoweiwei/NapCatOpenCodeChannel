@@ -1,16 +1,11 @@
-"""Tests for the message converter module."""
+"""Tests for the message converter module (OneBot <-> internal format)."""
 
-from nochan.converter import (
-    build_prompt,
-    parse_command,
-    parse_message_event,
-    to_onebot_message,
-)
+from nochan.converter import ai_to_onebot, onebot_to_internal
 
 BOT_ID = 1234567890
 
 
-# --- parse_message_event tests ---
+# --- onebot_to_internal tests ---
 
 
 def test_parse_private_text_message() -> None:
@@ -23,7 +18,7 @@ def test_parse_private_text_message() -> None:
         "message": [{"type": "text", "data": {"text": "hello"}}],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.chat_id == "private:111222"
     assert parsed.text == "hello"
     assert parsed.sender_name == "Alice"
@@ -48,7 +43,7 @@ def test_parse_group_message_with_at_bot() -> None:
         ],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.chat_id == "group:999888"
     assert parsed.text == "你好"
     assert parsed.is_at_bot is True
@@ -69,7 +64,7 @@ def test_parse_group_message_without_at_bot() -> None:
         "message": [{"type": "text", "data": {"text": "普通消息"}}],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.is_at_bot is False
     assert parsed.text == "普通消息"
 
@@ -89,7 +84,7 @@ def test_parse_mixed_segments() -> None:
         ],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.text == "看这个[图片]好看吗[表情]"
 
 
@@ -108,7 +103,7 @@ def test_parse_at_other_user() -> None:
         ],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.is_at_bot is False
     assert "@999" in parsed.text
 
@@ -125,7 +120,7 @@ def test_sender_name_prefers_card() -> None:
         "message": [{"type": "text", "data": {"text": "hi"}}],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.sender_name == "CardName"
 
 
@@ -141,78 +136,13 @@ def test_sender_name_fallback_to_nickname() -> None:
         "message": [{"type": "text", "data": {"text": "hi"}}],
         "post_type": "message",
     }
-    parsed = parse_message_event(event, BOT_ID)
+    parsed = onebot_to_internal(event, BOT_ID)
     assert parsed.sender_name == "RealName"
 
 
-# --- build_prompt tests ---
+# --- ai_to_onebot tests ---
 
 
-def test_build_prompt_private() -> None:
-    """Test prompt building for private messages."""
-    event = {
-        "self_id": BOT_ID,
-        "user_id": 111,
-        "message_type": "private",
-        "sender": {"user_id": 111, "nickname": "Alice", "card": ""},
-        "message": [{"type": "text", "data": {"text": "写个函数"}}],
-        "post_type": "message",
-    }
-    parsed = parse_message_event(event, BOT_ID)
-    prompt = build_prompt(parsed)
-    assert "[私聊，用户 Alice(111)]" in prompt
-    assert "写个函数" in prompt
-
-
-def test_build_prompt_group() -> None:
-    """Test prompt building for group messages."""
-    event = {
-        "self_id": BOT_ID,
-        "user_id": 111,
-        "message_type": "group",
-        "group_id": 222,
-        "group_name": "开发群",
-        "sender": {"user_id": 111, "nickname": "Alice", "card": ""},
-        "message": [
-            {"type": "at", "data": {"qq": str(BOT_ID)}},
-            {"type": "text", "data": {"text": " 帮忙"}},
-        ],
-        "post_type": "message",
-    }
-    parsed = parse_message_event(event, BOT_ID)
-    prompt = build_prompt(parsed)
-    assert "[群聊 开发群(222)" in prompt
-    assert "用户 Alice(111)]" in prompt
-    assert "帮忙" in prompt
-
-
-# --- parse_command tests ---
-
-
-def test_parse_command_new() -> None:
-    assert parse_command("/new") == "new"
-    assert parse_command("/NEW") == "new"
-    assert parse_command("/new extra args") == "new"
-
-
-def test_parse_command_help() -> None:
-    assert parse_command("/help") == "help"
-
-
-def test_parse_command_unknown() -> None:
-    assert parse_command("/foo") == "unknown"
-    assert parse_command("/") == "unknown"
-
-
-def test_parse_command_not_command() -> None:
-    assert parse_command("hello") is None
-    assert parse_command("not a /command") is None
-    assert parse_command("") is None
-
-
-# --- to_onebot_message tests ---
-
-
-def test_to_onebot_message() -> None:
-    result = to_onebot_message("Hello world")
+def test_ai_to_onebot() -> None:
+    result = ai_to_onebot("Hello world")
     assert result == [{"type": "text", "data": {"text": "Hello world"}}]

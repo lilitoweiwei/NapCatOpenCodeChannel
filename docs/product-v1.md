@@ -497,7 +497,9 @@ nochan/
 │   ├── conftest.py          # pytest 公共 fixtures
 │   ├── mock_napcat.py       # 模拟 NapCatQQ 客户端
 │   ├── test_config.py       # 配置加载测试
-│   ├── test_converter.py    # 消息转换测试
+│   ├── test_converter.py    # 消息格式转换测试
+│   ├── test_command.py      # 指令解析测试
+│   ├── test_prompt.py       # prompt 构造测试
 │   ├── test_handler.py      # 消息处理流水线测试（纯业务逻辑，无 WebSocket）
 │   ├── test_session.py      # 会话管理测试
 │   ├── test_opencode.py     # OpenCode 封装测试
@@ -513,7 +515,9 @@ nochan/
     ├── server.py             # WebSocket 传输层（连接管理、事件分发、API 调用）
     ├── handler.py            # 消息处理流水线（业务逻辑，不依赖 WebSocket）
     ├── session.py            # 会话管理（Session Manager）
-    ├── converter.py          # 消息转换（Message Converter）
+    ├── converter.py          # 消息格式转换（OneBot <-> 内部格式）
+    ├── command.py            # 用户指令解析（/new, /help 等）
+    ├── prompt.py             # AI prompt 构造（附加上下文信息）
     └── opencode.py           # OpenCode 封装（OpenCode Backend）
 ```
 

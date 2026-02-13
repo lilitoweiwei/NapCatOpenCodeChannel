@@ -1,14 +1,6 @@
-"""Message conversion between OneBot 11 format and AI plain text."""
+"""Message conversion between OneBot 11 format and internal representation."""
 
 from dataclasses import dataclass
-
-# Help text template shown for /help and unknown commands
-HELP_TEXT = (
-    "nochan 指令列表：\n"
-    "/new  - 创建新会话（清空 AI 上下文）\n"
-    "/help - 显示本帮助信息\n"
-    "直接发送文字即可与 AI 对话。"
-)
 
 
 @dataclass
@@ -31,7 +23,7 @@ class ParsedMessage:
     message_type: str
 
 
-def parse_message_event(event: dict, bot_id: int) -> ParsedMessage:
+def onebot_to_internal(event: dict, bot_id: int) -> ParsedMessage:
     """
     Parse an OneBot 11 message event into a structured ParsedMessage.
 
@@ -96,44 +88,7 @@ def parse_message_event(event: dict, bot_id: int) -> ParsedMessage:
     )
 
 
-def build_prompt(parsed: ParsedMessage) -> str:
-    """
-    Build the full prompt with context header for OpenCode.
-
-    Prepends sender/group info so the AI knows who is talking.
-    """
-    if parsed.message_type == "private":
-        header = f"[私聊，用户 {parsed.sender_name}({parsed.sender_id})]"
-    else:
-        header = (
-            f"[群聊 {parsed.group_name}({parsed.chat_id.split(':')[1]})，"
-            f"用户 {parsed.sender_name}({parsed.sender_id})]"
-        )
-    return f"{header}\n{parsed.text}"
-
-
-def parse_command(text: str) -> str | None:
-    """
-    Parse user command from message text.
-
-    Returns:
-        "new" for /new, "help" for /help, "unknown" for other /commands,
-        None for regular messages (not a command).
-    """
-    if not text.startswith("/"):
-        return None
-
-    # Extract command name (first word after /)
-    cmd = text.split()[0][1:].lower() if text.split() else ""
-    if cmd == "new":
-        return "new"
-    elif cmd == "help":
-        return "help"
-    else:
-        return "unknown"
-
-
-def to_onebot_message(text: str) -> list[dict]:
+def ai_to_onebot(text: str) -> list[dict]:
     """
     Convert AI response text to OneBot 11 message segment array.
 

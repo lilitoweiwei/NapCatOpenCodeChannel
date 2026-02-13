@@ -4,14 +4,10 @@ import contextlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from nochan.converter import (
-    HELP_TEXT,
-    ParsedMessage,
-    build_prompt,
-    parse_command,
-    parse_message_event,
-)
+from nochan.command import HELP_TEXT, parse_command
+from nochan.converter import ParsedMessage, onebot_to_internal
 from nochan.opencode import SubprocessOpenCodeBackend
+from nochan.prompt import build_prompt
 from nochan.session import SessionManager
 
 logger = logging.getLogger("nochan.handler")
@@ -52,7 +48,7 @@ class MessageHandler:
         """
         try:
             # Step 1: Parse the message event
-            parsed = parse_message_event(event, bot_id)
+            parsed = onebot_to_internal(event, bot_id)
 
             # Step 2: Group messages require @bot
             if parsed.message_type == "group" and not parsed.is_at_bot:
