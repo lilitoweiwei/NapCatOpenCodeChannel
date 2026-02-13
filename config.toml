@@ -1,0 +1,33 @@
+# nochan configuration file
+# See docs/product-v1.md section 9 for full documentation of each option.
+
+[server]
+# Bind address for the WebSocket server.
+# "0.0.0.0" listens on all interfaces (IPv4+IPv6); required for SSH tunnels.
+host = "0.0.0.0"
+# Port that NapCatQQ connects to (must match NapCatQQ's reverse WS config).
+port = 8282
+
+[opencode]
+# Path or name of the opencode executable.
+command = "opencode"
+# Working directory for opencode subprocess. Tilde (~) is expanded at runtime.
+work_dir = "~/.nochan/workspace"
+# Maximum number of concurrent opencode processes.
+# Keep low on resource-constrained VPS (2-core 2GB → 1 is safest).
+max_concurrent = 1
+
+[database]
+# SQLite database file path. Parent directories are created automatically.
+path = "data/nochan.db"
+
+[logging]
+# Console output level: DEBUG / INFO / WARNING / ERROR.
+# The log file always captures DEBUG regardless of this setting.
+level = "INFO"
+# Directory for log files (created automatically) (relative to project root).
+dir = "data/logs"
+# Number of days to keep daily-rotated log files.
+keep_days = 30
+# Total log size cap in MB. On startup, oldest files are deleted if exceeded.
+max_total_mb = 100

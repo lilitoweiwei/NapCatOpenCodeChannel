@@ -49,13 +49,21 @@ TOML 配置文件解析使用 Python 3.11+ 内置的 `tomllib`，无需额外依
 
 使用 Python 标准库 `logging`，不引入额外依赖。
 
-- **控制台输出**：`StreamHandler`，用于实时查看（开发/调试）
-- **文件持久化**：`TimedRotatingFileHandler`，按天轮转，保留最近 30 天的日志
+- **控制台输出**：`StreamHandler`，级别由配置控制（默认 `INFO`），用于实时查看
+- **文件持久化**：`TimedRotatingFileHandler`，**始终记录 DEBUG 级别**，确保所有诊断信息可追溯
 - **日志路径**：`data/logs/nochan.log`（当天）、`data/logs/nochan.log.2026-02-13`（历史）
-- **日志级别**：默认 `INFO`，可通过配置调整
 - **日志格式**：`[2026-02-13 10:30:00] [INFO] [session] 消息内容`
+- **日志轮转**：按天轮转，保留最近 30 天的日志文件
+- **总量上限**：启动时检查日志目录总大小，超过 `max_total_mb`（默认 100MB）时自动删除最旧的日志文件
 
 各模块使用独立的 logger name（如 `nochan.server`、`nochan.session`、`nochan.opencode`），便于按模块过滤。
+
+**日志充分性原则**：仅从日志文件即可判断消息是"没收到"还是"收到了但未处理"。具体而言：
+- 每条 QQ 消息到达时都会在 DEBUG 级别记录原始事件
+- 群聊消息因未 @bot 而被忽略时，在 DEBUG 级别明确记录原因
+- OpenCode 的每条 JSONL 事件、完整响应内容、工具调用详情都在 DEBUG 级别记录
+- API 调用的请求和响应在 DEBUG 级别记录
+- 发送给用户的回复文本在 DEBUG 级别记录
 
 ## 3. 通信协议详述
 
@@ -358,7 +366,7 @@ v1 实现 `SubprocessOpenCodeBackend`，未来可实现 `SDKOpenCodeBackend`。
 
 ### 6.4 OpenCode 工作目录
 
-所有 OpenCode 调用共享同一个工作目录（即 nochan 的项目根目录或指定的工作目录），不做用户/群隔离。
+所有 OpenCode 调用共享同一个工作目录，默认为 `~/.nochan/workspace`（可通过配置修改），不做用户/群隔离。nochan 启动时自动创建该目录（如不存在）。
 
 ### 6.5 JSONL 事件解析
 
@@ -460,16 +468,17 @@ port = 8080                      # WebSocket 监听端口
 
 [opencode]
 command = "opencode"             # opencode 可执行文件路径
-work_dir = "/path/to/workdir"   # opencode 工作目录
-max_concurrent = 2               # 最大并发 opencode 进程数
+work_dir = "~/.nochan/workspace" # opencode 工作目录（默认）
+max_concurrent = 1               # 最大并发 opencode 进程数
 
 [database]
 path = "data/nochan.db"          # SQLite 数据库路径
 
 [logging]
-level = "INFO"                   # 日志级别：DEBUG / INFO / WARNING / ERROR
+level = "INFO"                   # 控制台日志级别（文件始终记录 DEBUG）
 dir = "data/logs"                # 日志文件目录
 keep_days = 30                   # 日志文件保留天数
+max_total_mb = 100               # 日志总量上限（MB），超出时删除最旧的
 ```
 
 ## 10. 项目结构
@@ -479,12 +488,18 @@ nochan/
 ├── main.py                  # 入口，启动 WebSocket 服务器
 ├── config.toml              # 运行配置
 ├── docs/
-│   └── product-v1.md        # 本文档
+│   ├── product-v1.md        # 产品文档
+│   └── dev-plan-v1.md       # 开发计划
 ├── data/                    # 运行时数据（运行时生成）
 │   ├── nochan.db            # SQLite 数据库
 │   └── logs/                # 日志文件目录
-│       ├── nochan.log           # 当天日志
-│       └── nochan.log.2026-02-13  # 历史日志（按天轮转）
+├── tests/
+│   ├── conftest.py          # pytest 公共 fixtures
+│   ├── mock_napcat.py       # 模拟 NapCatQQ 客户端
+│   ├── test_*.py            # 自动化测试
+│   └── manual/              # 手动验证脚本（需真实外部服务）
+│       ├── verify_napcat.py
+│       └── verify_opencode.py
 └── nochan/
     ├── __init__.py
     ├── config.py             # 配置加载
