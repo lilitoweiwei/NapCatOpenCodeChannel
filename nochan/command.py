@@ -1,8 +1,8 @@
 """User command parsing and execution — handles /new, /stop, /help, etc.
 
 parse_command() is a pure function for identifying commands from message text.
-CommandExecutor handles the actual execution of commands, with dependencies
-injected via constructor to stay decoupled from the AI processing layer.
+CommandExecutor.try_handle() uses it internally — callers only need to know
+whether the message was handled as a command (True) or not (False).
 """
 
 import logging
@@ -31,6 +31,7 @@ HELP_TEXT = (
 )
 
 # --- Command response messages ---
+_MSG_NEW_SESSION = "已创建新会话，AI 上下文已清空。"
 _MSG_STOPPED = "已中断当前 AI 思考。"
 _MSG_NO_ACTIVE = "当前没有进行中的 AI 思考。"
 
@@ -55,8 +56,10 @@ def parse_command(text: str) -> str | None:
 
 class CommandExecutor:
     """
-    Executes user commands (/new, /stop, /help).
+    Parses and executes user commands (/new, /stop, /help).
 
+    The sole public entry point is try_handle(), which checks whether the
+    message is a command and executes it if so. Callers only see a bool.
     Dependencies are injected via constructor to keep this module decoupled
     from the AI processing layer — /stop uses a cancel_fn callback rather
     than a direct reference to AiProcessor.
@@ -75,15 +78,29 @@ class CommandExecutor:
         # Callback to cancel an active AI task (bridges to AiProcessor.cancel)
         self._cancel_fn = cancel_fn
 
-    async def execute(
+    async def try_handle(self, parsed: ParsedMessage, event: dict) -> bool:
+        """
+        Try to handle the message as a command.
+
+        Returns True if the message was a command (handled), False otherwise.
+        """
+        command = parse_command(parsed.text)
+        if command is None:
+            return False
+
+        logger.info("Command received: /%s from %s", command, parsed.chat_id)
+        await self._execute(command, parsed, event)
+        return True
+
+    async def _execute(
         self, command: str, parsed: ParsedMessage, event: dict
     ) -> None:
-        """Execute a parsed command."""
+        """Execute a parsed command (internal dispatch)."""
         if command == "new":
             # Archive current session and create a new one
             await self._session_manager.archive_active_session(parsed.chat_id)
             await self._session_manager.create_session(parsed.chat_id)
-            await self._reply_fn(event, "已创建新会话，AI 上下文已清空。")
+            await self._reply_fn(event, _MSG_NEW_SESSION)
             logger.info("New session created for %s", parsed.chat_id)
 
         elif command == "stop":

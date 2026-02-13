@@ -10,7 +10,7 @@ import logging
 from collections.abc import Awaitable, Callable
 
 from nochan.ai_processor import AiProcessor
-from nochan.command import CommandExecutor, parse_command
+from nochan.command import CommandExecutor
 from nochan.converter import onebot_to_internal
 from nochan.opencode import SubprocessOpenCodeBackend
 from nochan.prompt import PromptBuilder
@@ -91,13 +91,8 @@ class MessageHandler:
                 parsed.text[:100],
             )
 
-            # Step 3: Check for commands (lightweight, non-blocking)
-            command = parse_command(parsed.text)
-            if command is not None:
-                logger.info(
-                    "Command received: /%s from %s", command, parsed.chat_id
-                )
-                await self._cmd.execute(command, parsed, event)
+            # Step 3: Try to handle as a command (lightweight, non-blocking)
+            if await self._cmd.try_handle(parsed, event):
                 return
 
             # Step 4: Reject if AI is already processing for this chat
